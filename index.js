@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
 const port = 5000
-
+const mysql = require('mysql')
 const bodyParser = require('body-parser')
 
 
@@ -24,41 +24,50 @@ app.use((req, res, next) => {
   next();
 });
 
-const products = [
+let con = mysql.createConnection(
   {
-    id: 0, name: "Notebook Acer Swift", price: 45900, img: "https://img.advice.co.th/images_nas/pic_product4/A0147295/A0147295_s.jpg"
-  },
+    host: "korawit.ddns.net",
+    user: "webapp",
+    password: "secret2024",
+    database: "shop",
+    port: "3307"
+  }
+)
 
-  {
-    id: 1, name: "Notebook Asus  Vivo", price: 19900, img: "https://img.advice.co.th/images_nas/pic_product4/A0146010/A0146010_s.jpg"
-  },
+con.connect((err) => {
+  if (err) {
+    console.log(err);
+    throw (err)
+  }
+})
 
-  {
-    id: 2, name: "Notebook Lenovo Ideapad", price: 32900, img: "https://img.advice.co.th/images_nas/pic_product4/A0149009/A0149009_s.jpg"
-  },
 
-  {
-    id: 3, name: "Notebook MSIPrestige", price: 54900, img: "https://img.advice.co.th/images_nas/pic_product4/A0149954/A0149954_s.jpg"
-  },
-
-  {
-    id: 4, name: "Notebook DELLXPS", price: 99900, img: "https://img.advice.co.th/images_nas/pic_product4/A0146335/A0146335_s.jpg"
-  },
-
-  {
-    id: 5, name: "Notebook HPEnvy", price: 46900, img: "https://img.advice.co.th/images_nas/pic_product4/A0145712/A0145712_s.jpg"
-  }];
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
 
 app.get('/api/products', (req, res) => {
-  if (products.length > 0) {
-    res.send(products)
-  } else {
-    res.status(400).json("No product found.")
-  }
+  con.query("SELECT * from products", (err, result) => {
+    res.status(200).send(result)
+  })
+})
+
+app.get('/api/products/:id', (req, res) => {
+  const id = req.params.id
+  con.query("SELECT * from products WHERE id = ?", [id], (err, result) => {
+    if (err) {
+      res.status(404).json("Error query.")
+      console.log(err);
+      return
+    }
+    if (result.length == 1) {
+      res.status(200).json(result)
+    } else {
+
+      res.status(200).json({ msg: `Prouduct ID:${id} not found.` })
+    }
+  })
 })
 
 app.listen(port, () => {
